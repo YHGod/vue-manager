@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-// import Home from '../views/Home.vue'
 import Layout from '@/layout/index.vue'
+import { Message } from 'element-ui'
+import store from '@/store/index.js'
 Vue.use(VueRouter)
 
 /* 通用routers */
@@ -10,7 +11,7 @@ export const currencyRoutes = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login'),
-    meta: {title: '登录页'},
+    meta: { title: '登录页' },
     hidden: true
   },
   {
@@ -29,7 +30,7 @@ export const currencyRoutes = [
         path: 'dashbord',
         name: 'Dashbord',
         component: () => import('@/views/dashboard/index.vue'),
-        meta: {title: '首页', icon: 'el-icon-s-data'}
+        meta: { title: '首页', icon: 'el-icon-s-data' }
       }
     ]
   },
@@ -44,7 +45,7 @@ export const currencyRoutes = [
         path: 'index',
         name: 'Personal-index',
         component: () => import('@/views/About.vue'),
-        meta: {title: '个人中心'}
+        meta: { title: '个人中心' }
       }
     ]
   },
@@ -58,10 +59,17 @@ export const currencyRoutes = [
         path: 'index',
         name: 'Driver-index',
         component: () => import('@/views/driver-page/index.vue'),
-        meta: {title: '引导指南', icon: 'el-icon-s-flag'}
+        meta: { title: '引导指南', icon: 'el-icon-s-flag' }
       }
     ]
-  },
+  }
+]
+
+/**
+ * 动态添加的路由
+ * @type {[*]}
+ */
+export const asyncRoutes = [
   {
     path: '/permission',
     name: 'Permission',
@@ -76,7 +84,7 @@ export const currencyRoutes = [
         path: 'page-user',
         name: 'PageUser',
         component: () => import('@/views/permission/page-user'),
-        meta: {title: '用户页面', icon: 'el-icon-user'}
+        meta: { title: '用户页面', icon: 'el-icon-user' }
       },
       {
         path: 'page-admin',
@@ -91,7 +99,7 @@ export const currencyRoutes = [
         path: 'roles',
         name: 'Roles',
         component: () => import('@/views/permission/roles'),
-        meta: {title: '权限设置', icon: 'el-icon-s-tools'}
+        meta: { title: '权限设置', icon: 'el-icon-s-tools' }
       }
     ]
   },
@@ -109,13 +117,13 @@ export const currencyRoutes = [
         path: 'base-table',
         name: 'BaseTable',
         component: () => import('@/views/table/common-table'),
-        meta: {title: '普通表格'}
+        meta: { title: '普通表格' }
       },
       {
         path: 'complex-table',
         name: 'ComplexTable',
         component: () => import('@/views/table/complex-table'),
-        meta: {title: '复杂表格'}
+        meta: { title: '复杂表格' }
       }
     ]
   },
@@ -129,7 +137,7 @@ export const currencyRoutes = [
         path: 'index',
         name: 'Icons-index',
         component: () => import('@/views/icons'),
-        meta: {title: 'Icons图标', icon: 'el-icon-picture-outline'}
+        meta: { title: 'Icons图标', icon: 'el-icon-picture-outline' }
       }
     ]
   },
@@ -143,22 +151,17 @@ export const currencyRoutes = [
         path: '404',
         name: 'Page404',
         component: () => import('@/views/error-page/index.vue'),
-        meta: {title: '404', icon: 'el-icon-s-release'}
+        meta: { title: '404', icon: 'el-icon-s-release' }
       }
     ]
-  },
-  {
-    path: 'https://github.com/gcddblue/vue-admin-webapp',
-    name: 'Github',
-    meta: {icon: 'el-icon-link', title: '项目链接'}
-  },
+  }
 ]
 
 const creatRouter = () => {
   return new VueRouter({
     routes: currencyRoutes,
     scrollBehavior () {
-      return {x: 0, y: 0}
+      return { x: 0, y: 0 }
     }
   })
 }
@@ -166,19 +169,44 @@ const creatRouter = () => {
 const router = creatRouter()
 
 // 导航守卫  验证是否登录了  没有登录跳转到登录页面
-router.beforeEach((to, from, next) => {
-  console.log(to.path);
+router.beforeEach(async(to, from, next) => {
+  console.log(to.path)
   if (to.path === '/login') {
     sessionStorage.removeItem('user')
-  }
-  var user = sessionStorage.getItem('user');
-  if (!user && to.path !== '/login') {
-    next({
-      path: '/login'
-    })
-  } else {
     next()
+  }else{
+    var user = sessionStorage.getItem('user')
+    var hasRoles = store.state.routes
+    if (!!user) {
+      if (hasRoles.length == 0) {
+        try {
+          const { roles } = await store.dispatch('getRoutes')
+          const addRoutes = await store.dispatch(
+            'getAsyncRoutes',
+            roles
+          )
+          console.log(addRoutes)
+          router.addRoutes(addRoutes)
+          console.log(router)
+          next({ ...to, replace: true })
+        } catch (error) {
+          Message.error('此路不通')
+        }
+      } else {
+        next()
+      }
+    } else {
+      next({
+        path: '/login'
+      })
+    }
   }
 })
+
+// 解决addRoute不能删除动态路由问题
+export function resetRouter() {
+  const reset = creatRouter()
+  router.matcher = reset.matcher
+}
 
 export default router

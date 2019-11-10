@@ -27,11 +27,12 @@
   export default {
     data(){
       return {
-        routes:this.$router.options.routes
+//        routes:this.$router.options.routes
       }
     },
     computed: mapState({
-      opened: 'opened'
+      opened: 'opened',
+      routes: 'routes'
     }),
     components: {
       SidebarItem
