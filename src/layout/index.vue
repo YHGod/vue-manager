@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div class="wrapper" :class="{ closeBar: opened }">
     <m-header></m-header>
     <transition
       enter-active-class="animated bounceInRight"
@@ -18,6 +18,7 @@
   import SideBar from './components/sideBar/index.vue'
   import PageMain from './components/pageMain/index.vue'
   import NotificatBar from '@/components/NotificatBar'
+  import { mapState } from 'vuex'
   export default{
     name:'layout',
     components:{
@@ -30,6 +31,7 @@
 
     },
     computed:{
+      ...mapState(['opened']),
       msgIsShow(){
           return this.$store.state.msgIsShow
       }
